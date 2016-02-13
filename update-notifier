@@ -1,7 +1,10 @@
 #!/bin/sh
+trap 'rm /tmp/{pacmanupdates,aurupdates,all_updates}' INT TERM QUIT EXIT
 eval checkupdates > /tmp/pacmanupdates
-eval yaourt -Qua | grep "aur" > /tmp/aurupdates &
-if [ "$(wc -l /tmp/pacmanupdates | awk '{print $1}')" -gt "0" ];
+cat /tmp/pacmanupdates >> /tmp/all_updates
+eval yaourt -Qua | grep "aur" > /tmp/aurupdates
+cat /tmp/aurupdates >> /tmp/all_updates
+if [ "$(wc -l /tmp/all_updates | awk '{print $1}')" -gt "0" ];
   then
-  notify-send "you have $(wc -l /tmp/pacmanupdates | awk '{print $1}') + $(wc -l /tmp/aurupdates | awk '{print $1}') updates" "$(cat /tmp/pacmanupdates) \n $(cat /tmp/aurupdates)"
+  notify-send "you have $(wc -l /tmp/pacmanupdates | awk '{print $1}') + $(wc -l /tmp/aurupdates | awk '{print $1}') updates" "$(cat /tmp/pacmanupdates) \n$(cat /tmp/aurupdates)"
 fi
