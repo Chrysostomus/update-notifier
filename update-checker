@@ -1,0 +1,6 @@
+#! /bin/bash
+## Check for updates on regular intervals
+while true; do
+	update-notifier
+	sleep $1
+done
