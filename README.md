@@ -20,7 +20,7 @@ Then, clone this Github repository to your system with the command:
 ```
 git clone https://github.com/Chrysostomus/update-notifier.git
 ```
-and execute pacli:
+and mark the relevant files as executables:
 ```
 cd update-notifier && chmod +x update-notifier update-checker
 ```
