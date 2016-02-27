@@ -27,14 +27,19 @@ cd update-notifier && chmod +x update-notifier update-checker
 
 
 ## How to Use
+update-notifier can be used in differnt ways. Here are some common examples:
 
-###conky
-
+### conky
+Add the following line to the main part of your conky in order to check for updates every 7200 seconds (= 2 hours) and display a notification: 
+```
 ${execi 7200 update-notifier}
+```
 
-
-###cron
-
+### cron
+You can also put update-notifier in your crontab file. There are differnt ways to do this. If you are already using a crontab file, you know what you need to do.
 
 ### autostart
-
+Autostart can vary in function and form depending on your Desktop Environment or Window Manager. Add the following command to your autostart in order to check for updates every 2.5 hours and display a notification: 
+```
+update-checker 2h 30m
+```
