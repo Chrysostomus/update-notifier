@@ -1,6 +1,25 @@
-#! /bin/bash
-## Check for updates on regular intervals
+#! /bin/sh
+interval=${1:-7200}
+
+connection()
+{
+    ping -c 1 8.8.8.8 >/dev/null 2>&1
+}
+}
+checker()
+{
 while true; do
-	update-notifier
-	sleep $1
+    update-notifier
+    sleep "$interval"
 done
+}
+
+waiter()
+{
+if ! connection ; then
+    sleep 10 && waiter
+else
+    checker
+fi
+
+waiter
