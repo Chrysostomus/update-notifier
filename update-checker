@@ -1,6 +1,7 @@
 #! /bin/bash
 ## Check for updates on regular intervals
 while true; do
+	sleep 30
 	update-notifier
 	sleep $1
 done
