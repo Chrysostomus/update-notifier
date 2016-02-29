@@ -1,5 +1,5 @@
 #! /bin/sh
-interval=${1:-7200}
+interval=${1:-21600}
 
 connection()
 {
