@@ -1,6 +1,11 @@
 # update-notifier
-Script to check for pacman updates and notify user about it. Can be called with conky, autostart script or cron.
-
+Script to check for pacman and yaourt updates and notify user about it. Can be called with conky, autostart script or cron.
+ 
+ This script will notify the user as soon as updates are available. It uses the "notify-send" command to do this. If you want to test, whether it can work on your system, execute this command in your terminal:
+ ```
+ +notify-send "Hi"
+ ```
+ You should see a notification pop up.
 
 ## Installation
 
@@ -38,8 +43,23 @@ ${execi 7200 update-notifier}
 ### cron
 You can also put update-notifier in your crontab file. There are differnt ways to do this. If you are already using a crontab file, you know what you need to do.
 
+An example line in crontab can be (in order to check for updates every 7 hours):
+ ```
+ * */7 * * * update-notifier
+ ```
+ 
+
 ### autostart
 Autostart can vary in function and form depending on your Desktop Environment or Window Manager. Add the following command to your autostart in order to check for updates every 2.5 hours and display a notification: 
 ```
 update-checker 2h 30m
 ```
+Other examples are (for updating every 2 hours and 3 days):
+ ```
+ +update-checker 7200
+ ```
+ ```
+ update-checker 3d
+ ```
+
+The default is 6 hours. This happens if you run update-checker witgout arguments.
