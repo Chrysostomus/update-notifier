@@ -5,7 +5,7 @@ Script to check for pacman and yaourt updates and notify user about it. Can be c
  ```
  notify-send "Hi"
  ```
- You should see a notification pop up.
+ You should see a notification pop up. If you don't you probably lack either libnotify or notification daemon (dunst, xfce4-notification-daemon etc). If you use a desktop enviroment, you should have these installed by default.
 
 ## Installation
 
