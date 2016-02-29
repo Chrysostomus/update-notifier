@@ -3,7 +3,7 @@ Script to check for pacman and yaourt updates and notify user about it. Can be c
  
  This script will notify the user as soon as updates are available. It uses the "notify-send" command to do this. If you want to test, whether it can work on your system, execute this command in your terminal:
  ```
- +notify-send "Hi"
+ notify-send "Hi"
  ```
  You should see a notification pop up.
 
