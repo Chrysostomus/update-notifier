@@ -1,10 +1,15 @@
 #!/bin/sh
-trap 'rm /tmp/{pacmanupdates,aurupdates,all_updates}' INT TERM QUIT EXIT
-eval checkupdates > /tmp/pacmanupdates
-cat /tmp/pacmanupdates >> /tmp/all_updates
-eval yaourt -Qua | grep "aur" > /tmp/aurupdates
-cat /tmp/aurupdates >> /tmp/all_updates
-if [ "$(wc -l /tmp/all_updates | awk '{print $1}')" -gt "0" ];
-  then
-  notify-send "you have $(wc -l /tmp/pacmanupdates | awk '{print $1}') + $(wc -l /tmp/aurupdates | awk '{print $1}') updates" "$(cat /tmp/pacmanupdates) \n$(cat /tmp/aurupdates)"
+
+trap 'rm /tmp/{pacmanupdates,aurupdates} 2>/dev/null' INT TERM QUIT EXIT
+nb_pac=$(checkupdates | tee /tmp/pacmanupdates | wc -l)
+if [ -f /usr/bin/yaourt ]; then
+   nb_aur=$(yaourt -Qua | grep "^aur/" | tee /tmp/aurupdates | wc -l)
+else
+   nb_aur=0
+fi
+
+if ((nb_pac>0 || nb_aur>0)); then
+  ((nb_aur>0)) && nb_aur="+ ${nb_aur}"
+  ((nb_aur==0)) && unset nb_aur
+  notify-send "you have ${nb_pac} ${nb_aur} updates" "$(cat /tmp/pacmanupdates) \n$(cat /tmp/aurupdates)"
 fi
