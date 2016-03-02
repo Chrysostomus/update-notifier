@@ -56,7 +56,7 @@ update-checker 2h 30m
 ```
 Other examples are (for updating every 2 hours and 3 days):
  ```
- +update-checker 7200
+ update-checker 7200
  ```
  ```
  update-checker 3d
