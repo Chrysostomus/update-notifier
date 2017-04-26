@@ -2,7 +2,7 @@
 
 trap 'rm /tmp/{pacmanupdates,aurupdates,.installed_kernels,.available_kernels} 2>/dev/null' INT TERM QUIT EXIT
 mhwd-kernel -li 2>/dev/null | awk '/ linux/ {print $2}' > /tmp/.installed_kernels
-mhwd-kernel -l 2>/dev/null | awk '/linux/ {print $2}'
+mhwd-kernel -l 2>/dev/null | awk '/linux/ {print $2}' > /tmp/.available_kernels
 
 nb_pac=$(checkupdates | tee /tmp/pacmanupdates | wc -l)
 if [ -f /usr/bin/yaourt ]; then
@@ -18,28 +18,30 @@ if ((nb_pac>0 || nb_aur>0)); then
   cat /tmp/aurupdates
 fi
 
-if ! $(grep -qf /tmp/.installed_kernels /tmp/.installed_kernels); then
+if ! $(grep -qf /tmp/.available_kernels /tmp/.installed_kernels); then
 	dunstify -A manjaro-settings-manager,ACCEPT -A true,DECLINE "Your kernel is no longer supported" "Please change kernel with Manjaro Settings Manager" | sh
 fi
 
-terminal_update()
-{
-	touch /.manual_update
-}
 # Branch
 if ! $(grep -q "^Branch" /etc/pacman-mirrors.conf); then 
   branch=stable
   capital_branch=Stable
 else
   branch=$(awk '/Branch =/{print $3}' /etc/pacman-mirrors.conf)
-  capital_branch=$(echo $branch | sed -e "s/\b\(.\)/\u\1/g")
+  capital_branch=$(echo $branch | sed 's/\b[a-z]/\u&/g')
 fi
 # timestamp update announcements. 
-last_annoncement=$(curl https://forum.manjaro.org/c/announcements/"$branch"-updates.rss 2> /dev/null | awk '/<title>/' | awk -v br="$capital_branch '/\[br Update\]/{print $3}' | head -n1)
-
+last_annoncement=$(curl https://forum.manjaro.org/c/announcements/"$branch"-updates.rss 2> /dev/null | awk '/<title>/' | awk -v br="$capital_branch" '/\[br Update\]/{print $3}' | head -n1)
 # timestamp of last update
-last_update=$(awk '/upgrade/ {print $1}' /var/log/pacman.log | sed 's/\[//' tail -n1)
-
+last_update=$(awk '/upgrade/ {print $1}' /var/log/pacman.log | sed 's/\[//' | tail -n1)
 if [[ $last_annoncement > $last_update ]]; then
-	dunstify -A terminal_update,YES -A true,NO "Update requires user input. Advice in forum announcements." "Run next update in terminal?" | sh	
+	dunstify -A terminal_update,YES -A true,NO "Update requires user input. Advice in forum announcements." "Run next update in terminal?" | read answer
+	case answer in
+	terminal_update)
+		touch /.manual_update
+		;;
+	*)
+		true
+		;;
+	esac
 fi
