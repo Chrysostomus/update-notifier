@@ -48,7 +48,7 @@ if [[ $last_annoncement > $last_update ]]; then
 	dunstify -A terminal_update,YES -A true,NO "Update requires user input. Advice in forum announcements." "Run next update in terminal?" | read answer
 	case answer in
 	terminal_update)
-		touch /.manual_update
+		touch /tmp/.manual_update
 		;;
 	*)
 		true
