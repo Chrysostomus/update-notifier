@@ -1,5 +1,5 @@
 #!/bin/sh
-if [ -e /.manual_update ]; then
+if [ -e /tmp/.manual_update ]; then
 	gnome-terminal -e 'sh -c  \"sudo pacman -Syu ; echo Done - Press enter to exit; read\" ' && rm /tmp/.manual_update
 else
 	pamac-updater
