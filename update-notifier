@@ -1,5 +1,6 @@
 #!/bin/bash
 
+. ~/.profile
 trap 'rm /tmp/{pacmanupdates,aurupdates} 2>/dev/null' INT TERM QUIT EXIT
 nb_pac=$(checkupdates | tee /tmp/pacmanupdates | wc -l)
 if [ -f /usr/bin/pacaur ]; then
@@ -17,51 +18,50 @@ fi
 
 if [ -z "$TERMINAL" ]; then
   if [ "$(which sterminal)" ]; then
-	  echo "export TERMINAL=\"sterminal\"" >> ~/.profile
-	  TERMINAL="sterminal -e"
+    echo "export TERMINAL=\"sterminal\"" >> ~/.profile
+    TERMINAL="sterminal"
   elif [ "$(which urxvt)" ]; then
-	  echo "export TERMINAL=\"urxvt\"" >> ~/.profile
-	  TERMINAL="urxvt -e"
+    echo "export TERMINAL=\"urxvt\"" >> ~/.profile
+    TERMINAL="urxvt"
   elif [ "$(which termite)" ]; then
-	  echo "export TERMINAL=\"termite\"" >> ~/.profile
-	  TERMINAL="termite -e"
+    echo "export TERMINAL=\"termite\"" >> ~/.profile
+    TERMINAL="termite"
   elif [ "$(which terminator)" ]; then
-	  echo "export TERMINAL=\"terminator\"" >> ~/.profile
-	  TERMINAL="terminator -e"
+    echo "export TERMINAL=\"terminator\"" >> ~/.profile
+    TERMINAL="terminator"
   elif [ "$(which sakura)" ]; then
-	  TERMINAL="sakura -e"
-	  echo "export TERMINAL=\"sakura\"" >> ~/.profile
+    TERMINAL="sakura"
+    echo "export TERMINAL=\"sakura\"" >> ~/.profile
   elif [ "$(which lxterminal)" ]; then
-	  echo "export TERMINAL=\"lxterminal\"" >> ~/.profile
-	  TERMINAL="lxterminal -e"
+    echo "export TERMINAL=\"lxterminal\"" >> ~/.profile
+    TERMINAL="lxterminal"
   elif [ "$(which xfce4-terminal)" ]; then
-	  TERMINAL="xfce4-terminal -e"
-	  echo "export TERMINAL=\"xfce4-terminal\"" >> ~/.profile
+    TERMINAL="xfce4-terminal"
+    echo "export TERMINAL=\"xfce4-terminal\"" >> ~/.profile
   elif [ "$(which gnome-terminal)" ]; then
-	  echo "export TERMINAL=\"gnome-terminal\"" >> ~/.profile
-	  TERMINAL="gnome-terminal -e"
+    echo "export TERMINAL=\"gnome-terminal\"" >> ~/.profile
+    TERMINAL="gnome-terminal"
   elif [ "$(which konsole)" ]; then
-	  TERMINAL="konsole -e"
-	  echo "export TERMINAL=\"konsole\"" >> ~/.profile
+    TERMINAL="konsole"
+    echo "export TERMINAL=\"konsole\"" >> ~/.profile
   elif [ "$(which qterminal)" ]; then
-	  TERMINAL="qterminal -e"
-	  echo "export TERMINAL=\"qterminal\"" >> ~/.profile
+    TERMINAL="qterminal"
+    echo "export TERMINAL=\"qterminal\"" >> ~/.profile
   elif [ "$(which xterm)" ]; then
-	  TERMINAL="xterm -e"
-	  echo "export TERMINAL=\"xterm\"" >> ~/.profile
+    TERMINAL="xterm"
+    echo "export TERMINAL=\"xterm\"" >> ~/.profile
   fi
 fi
 
 if ((nb_pac>0 || nb_aur>0)); then
   ((nb_aur>0)) && nb_aur="+ ${nb_aur}"
   ((nb_aur==0)) && unset nb_aur
-  dunstify "You have ${nb_pac} ${nb_aur} updates" "$(cat /tmp/pacmanupdates) \n$(cat /tmp/aurupdates)" \
-   -A YES,"Update now" -A NO,Later | read answer
-    case $answer in
-    	YES) $TERMINAL -e $update_command
-    		;;
-    	NO) true
-			;;
+  answer=$(dunstify "You have ${nb_pac} ${nb_aur} updates" "$(cat /tmp/pacmanupdates) \n$(cat /tmp/aurupdates)" \
+   -A Y,"Update now" -A N,Later)
+    case $(echo $answer) in
+      Y) $TERMINAL -e $update_command
+        ;;
+    *) echo "$answer no match" 
     esac 
 else
   dunstify "Your system is up to date" "No packages to update"
