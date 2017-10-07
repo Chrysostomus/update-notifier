@@ -4,7 +4,7 @@
 trap 'rm /tmp/{pacmanupdates,aurupdates} 2>/dev/null' INT TERM QUIT EXIT
 nb_pac=$(checkupdates | tee /tmp/pacmanupdates | wc -l)
 if [ -f /usr/bin/pacaur ]; then
-   nb_aur=$(pacaur -Qua | grep "^aur/" | tee /tmp/aurupdates | wc -l)
+   nb_aur=$(pacaur -Qua | cut -d" " -f 2 | grep "aur" | wc -l)
    update_command="pacaur -Syu"
 elif [ -f /usr/bin/yaourt ]; then
     nb_aur=$(yaourt -Qua | grep "^aur/" | tee /tmp/aurupdates | wc -l)
