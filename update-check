@@ -1,14 +1,23 @@
 #!/bin/bash
 
-trap 'rm /tmp/{pacmanupdates,aurupdates,.installed_kernels,.available_kernels} 2>/dev/null' INT TERM QUIT EXIT
-mhwd-kernel -li 2>/dev/null | awk '/ linux/ {print $2}' > /tmp/.installed_kernels
-mhwd-kernel -l 2>/dev/null | awk '/linux/ {print $2}' > /tmp/.available_kernels
+trap 'rm /tmp/{pacmanupdates,aurupdates} 2>/dev/null' INT TERM QUIT EXIT
+
+if ! $(ping -c 3 google.com >> /dev/null 2>&1); then
+	exit
+elif [[ -e /run/miso/bootmnt ]]; then
+	exit
+fi
 
 nb_pac=$(checkupdates | tee /tmp/pacmanupdates | wc -l)
-if [ -f /usr/bin/yaourt ]; then
-   nb_aur=$(yaourt -Qua | grep "^aur/" | tee /tmp/aurupdates | wc -l)
+if [ -f /usr/bin/pacaur ]; then
+   nb_aur=$(pacaur -Qua | grep "^aur/" | tee /tmp/aurupdates | wc -l)
+   update_command="pacaur -Syu"
+elif [ -f /usr/bin/yaourt ]; then
+    nb_aur=$(yaourt -Qua | grep "^aur/" | tee /tmp/aurupdates | wc -l)
+    update_command="yaourt -Syua"
 else
    nb_aur=0
+   update_command="sudo pacman -Syu"
 fi
 
 if ((nb_pac>0 || nb_aur>0)); then
@@ -18,19 +27,17 @@ if ((nb_pac>0 || nb_aur>0)); then
   cat /tmp/aurupdates
 fi
 
-# Check if all installed kernels are eol
-if [[ -e /tmp/.available_kernels ]] && ! [[ -z $(cat /tmp/.available_kernels) ]]; then 
-	if ! $(grep -qf /tmp/.available_kernels /tmp/.installed_kernels); then
-		msm=$(dunstify -A manjaro-settings-manager,ACCEPT -A true,DECLINE "Your kernel is no longer supported" "Please change kernel with Manjaro Settings Manager")
-		case $(echo msm) in
-		manjaro-settings-manager)
-			manjaro-settings-manager			
-			;;
-		*)
-			true
-			;;
-		esac
-	fi
+# Check if the running kernel is eol
+if ! $(pacman -Ssq $(mhwd-kernel -li | awk '/ \* / {print $2}') &> /dev/null); then 
+	msm=$(dunstify -A manjaro-settings-manager,ACCEPT -A true,DECLINE "Your kernel is no longer supported" "Please change kernel with Manjaro Settings Manager")
+	case $(echo msm) in
+	manjaro-settings-manager)
+		manjaro-settings-manager			
+		;;
+	*)
+		true
+		;;
+	esac
 fi
 # Branch
 if ! $(grep -q "^Branch" /etc/pacman-mirrors.conf); then 
