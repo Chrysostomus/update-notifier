@@ -10,7 +10,7 @@ fi
 
 nb_pac=$(checkupdates | tee /tmp/pacmanupdates | wc -l)
 if [ -f /usr/bin/pacaur ]; then
-   nb_aur=$(pacaur -Qua | grep "^aur/" | tee /tmp/aurupdates | wc -l)
+   nb_aur=$(pacaur -Qua | awk '$2 == "aur" {print $3 $4 $5 $6}' | tee /tmp/aurupdates | wc -l)
    update_command="pacaur -Syu"
 elif [ -f /usr/bin/yaourt ]; then
     nb_aur=$(yaourt -Qua | grep "^aur/" | tee /tmp/aurupdates | wc -l)
@@ -30,15 +30,9 @@ fi
 # Check if the running kernel is eol
 if ! $(pacman -Ssq $(mhwd-kernel -li | awk '/ \* / {print $2}') &> /dev/null); then 
 	msm=$(dunstify -A manjaro-settings-manager,ACCEPT -A true,DECLINE "Your kernel is no longer supported" "Please change kernel with Manjaro Settings Manager")
-	case $(echo msm) in
-	manjaro-settings-manager)
-		manjaro-settings-manager			
-		;;
-	*)
-		true
-		;;
-	esac
+	[[ "$msm" == "manjaro-settings-manager" ]] && manjaro-settings-manager &> /dev/null &
 fi
+
 # Branch
 if ! $(grep -q "^Branch" /etc/pacman-mirrors.conf); then 
   branch=stable
