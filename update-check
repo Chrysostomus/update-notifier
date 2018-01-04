@@ -28,7 +28,7 @@ if ((nb_pac>0 || nb_aur>0)); then
 fi
 
 # Check if the running kernel is eol
-if ! $(pacman -Ssq $(mhwd-kernel -li | awk '/ \* / {print $2}') &> /dev/null); then 
+if ! $(pacman -Ssq $(mhwd-kernel -li | awk '/ \* / {print $2}' | head -n1) &> /dev/null); then 
 	msm=$(dunstify -A manjaro-settings-manager,ACCEPT -A true,DECLINE "Your kernel is no longer supported" "Please change kernel with Manjaro Settings Manager")
 	[[ "$msm" == "manjaro-settings-manager" ]] && manjaro-settings-manager &> /dev/null &
 fi
