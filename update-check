@@ -2,7 +2,7 @@
 
 #set -x
 
-trap 'rm /tmp/{pacmanupdates,aurupdates,ignorepkg} 2>/dev/null' INT TERM QUIT EXIT
+trap 'rm /tmp/{pacmanupdates,aurupdates,ignorepkgs} 2>/dev/null' INT TERM QUIT EXIT
 
 if ! $(ping -c 3 google.com >> /dev/null 2>&1); then
 	exit
@@ -30,8 +30,8 @@ if ((nb_pac>0 || nb_aur>0)); then
   pkgs="$(grep IgnorePkg /etc/pacman.conf | sed -e 's/IgnorePkg =//' -e 's/#.*//')"
   grps="$(grep IgnoreGroup /etc/pacman.conf | sed -e 's/IgnoreGroup =//' -e 's/#.*//')"
   [[ -n $grps ]] && pkgs="$pkgs $(pacman -Sgq $grps)"
-  echo $pkgs | sed 's:IgnorePkg = ::g' > /tmp/ignorepkg
-  for i in $(cat /tmp/ignorepkg); do
+  echo $pkgs | sed 's:IgnorePkg = ::g' > /tmp/ignorepkgs
+  for i in $(cat /tmp/ignorepkgs); do
   	sed -i -e "/$i/d" /tmp/aurupdates
   done
   cat /tmp/pacmanupdates 
