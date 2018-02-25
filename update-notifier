@@ -58,7 +58,7 @@ if ((nb_pac>0 || nb_aur>0)); then
   answer=$(dunstify "You have ${nb_pac} ${nb_aur} updates" "$(cat /tmp/pacmanupdates)" \
    -A Y,"Update now" -A N,Later)
     case $(echo $answer) in
-      Y) $TERMINAL -e $update_command
+      Y) $TERMINAL -e $SHELL -c "$update_command || { echo 'Press a key to close...' ; read }"
         ;;
     *) echo "$answer no match" 
     esac 
