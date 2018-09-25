@@ -4,7 +4,7 @@
 
 trap 'rm /tmp/{pacmanupdates,aurupdates,ignorepkgs} 2>/dev/null' INT TERM QUIT EXIT
 
-if ! $(ping -c 3 google.com >> /dev/null 2>&1); then
+if ! $(curl -s --max-time 10 google.com >> /dev/null 2>&1); then
 	exit
 elif [[ -e /run/miso/bootmnt ]]; then
 	exit
