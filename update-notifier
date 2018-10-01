@@ -5,6 +5,8 @@ trap 'rm /tmp/{pacmanupdates,aurupdates} 2>/dev/null' INT TERM QUIT EXIT
 nb_pac=$(checkupdates | tee /tmp/pacmanupdates | wc -l)
 if [ -f /usr/bin/pacaur ]; then
    nb_aur=$(pacaur -Qua | awk '$2 == "aur" {print $3 $4 $5 $6}' | tee /tmp/aurupdates | wc -l)
+elif [ -f /usr/bin/trizen ]; then
+    nb_aur=$(trizen -Qua 2>&1 | cut -d" " -f 2,6,7,8 | sed -e 's/[()]//g' | tee /tmp/aurupdates | wc -l)
 elif [ -f /usr/bin/yaourt ]; then
     nb_aur=$(yaourt -Qua | grep "^aur/" | tee /tmp/aurupdates | wc -l)
 else
@@ -57,8 +59,8 @@ if ((nb_pac>0 || nb_aur>0)); then
     case $(echo $answer) in
       Y) $TERMINAL -e update-help
         ;;
-    *) echo "$answer no match" 
-    esac 
+    *) echo "$answer no match"
+    esac
 else
   dunstify "Your system is up to date" "No packages to update"
 fi
