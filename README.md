@@ -1,7 +1,7 @@
 # update-notifier
-Script to check for pacman and yaourt updates and notify user about it. Can be called with conky, autostart script or cron.
+Script to check for pacman and AUR updates and notify user about it. Can be called with conky, autostart script or cron.
  
- This script will notify the user as soon as updates are available. 
+ This script will notify the user as soon as updates are available. It can use the following AUR helpers as backend: yay, trizen, pacaur, yaourt. 
 
 
 ## Installation
