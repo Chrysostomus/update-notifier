@@ -2,7 +2,7 @@
 
 if [ -f /usr/bin/yay ]; then
    nb_aur=$(yay -Qua | tee /tmp/aurupdates | wc -l)
-   update_command="yay -Syua"
+   update_command="yay -Syu"
 elif [ -f /usr/bin/trizen ]; then
    nb_aur=$(trizen -Qua 2>&1 | cut -d" " -f 2,6,7,8 | sed -e 's/[()]//g' | tee /tmp/aurupdates | wc -l)
    update_command="trizen -Syua"
