@@ -5,6 +5,7 @@ connection()
 {
     curl -s --max-time 10 google.com >/dev/null 2>&1
 }
+
 checker()
 {
 while true; do
