@@ -1,18 +1,26 @@
 #!/bin/bash
 
-trap 'rm /tmp/{pacmanupdates,aurupdates} 2>/dev/null' INT TERM QUIT EXIT
+#set -x
 
-if ! $(ping -c 3 google.com >> /dev/null 2>&1); then
+trap 'rm /tmp/{pacmanupdates,aurupdates,ignorepkgs} 2>/dev/null' INT TERM QUIT EXIT
+
+if ! curl -s --max-time 10 google.com >> /dev/null 2>&1; then
 	exit
 elif [[ -e /run/miso/bootmnt ]]; then
 	exit
 fi
 
 nb_pac=$(checkupdates | tee /tmp/pacmanupdates | wc -l)
-if [ -f /usr/bin/pacaur ]; then
+if [ -x /usr/bin/yay ]; then
+   nb_aur=$(yay -Qua | tee /tmp/aurupdates | wc -l)
+   update_command="yay -Syu"
+elif [ -x /usr/bin/trizen ]; then
+   nb_aur=$(trizen -Qua | tee /tmp/aurupdates | wc -l)
+   update_command="trizen -Syua"
+elif [ -x /usr/bin/pacaur ]; then
    nb_aur=$(pacaur -Qua | awk '$2 == "aur" {print $3 $4 $5 $6}' | tee /tmp/aurupdates | wc -l)
    update_command="pacaur -Syu"
-elif [ -f /usr/bin/yaourt ]; then
+elif [ -x /usr/bin/yaourt ]; then
     nb_aur=$(yaourt -Qua | grep "^aur/" | tee /tmp/aurupdates | wc -l)
     update_command="yaourt -Syua"
 else
@@ -23,36 +31,48 @@ fi
 if ((nb_pac>0 || nb_aur>0)); then
   ((nb_aur>0)) && nb_aur="+ ${nb_aur}"
   ((nb_aur==0)) && unset nb_aur
-  cat /tmp/pacmanupdates 
+
+	# Check the Ignore array in pacman.conf
+  pkgs="$(grep IgnorePkg /etc/pacman.conf | sed -e 's/IgnorePkg =//' -e 's/#.*//')"
+  grps="$(grep IgnoreGroup /etc/pacman.conf | sed -e 's/IgnoreGroup =//' -e 's/#.*//')"
+  [[ -n $grps ]] && pkgs="$pkgs $(pacman -Sgq $grps)"
+  echo $pkgs | sed 's:IgnorePkg = ::g' > /tmp/ignorepkgs
+  for i in $(cat /tmp/ignorepkgs); do
+  	sed -i -e "/$i/d" /tmp/aurupdates
+  done
+  cat /tmp/pacmanupdates
   cat /tmp/aurupdates
 fi
 
-# Check if the running kernel is eol
-if ! $(pacman -Ssq $(mhwd-kernel -li | awk 'NR==1 {print $4}' | tr -d '()') &> /dev/null); then 
-	msm=$(dunstify -A manjaro-settings-manager,ACCEPT -A true,DECLINE "Your kernel is no longer supported" "Please change kernel with Manjaro Settings Manager")
-	[[ "$msm" == "manjaro-settings-manager" ]] && manjaro-settings-manager &> /dev/null &
-fi
+if [[ -e /var/lib/pacman/sync/core.db ]]; then
+	# Check if the running kernel is eol
+	if ! pacman -Ssq "$(mhwd-kernel -li | awk 'NR==1 {print $4}' | tr -d '()')" &> /dev/null; then
+		msm=$(dunstify -A manjaro-settings-manager,ACCEPT -A true,DECLINE "Your kernel is no longer supported" "Please change kernel with Manjaro Settings Manager")
+		[[ "$msm" == "manjaro-settings-manager" ]] && manjaro-settings-manager &> /dev/null &
+	fi
 
-# Branch
-if ! $(grep -q "^Branch" /etc/pacman-mirrors.conf); then 
-  branch=stable
-  capital_branch=Stable
-else
-  branch=$(awk '/Branch =/{print $3}' /etc/pacman-mirrors.conf)
-  capital_branch=$(echo $branch | sed 's/\b[a-z]/\u&/g')
-fi
-# timestamp update announcements. 
-last_annoncement=$(curl https://forum.manjaro.org/c/announcements/"$branch"-updates.rss 2> /dev/null | awk '/<title>/' | awk -v br="$capital_branch" '/\[br Update\]/{print $3}' | head -n1)
-# timestamp of last update
-last_update=$(awk '/upgrade/ {print $1}' /var/log/pacman.log | sed 's/\[//' | tail -n1)
-if [[ $last_annoncement > $last_update ]]; then
-	answer=$(dunstify -A terminal_update,YES -A true,NO "Update requires user input. Advice in forum announcements." "Run next update in terminal?")
-	case $(echo answer) in
-	terminal_update)
-		touch /tmp/.manual_update
-		;;
-	*)
-		true
-		;;
-	esac
+	# Branch
+	if [[ -x /usr/bin/pacman-mirrors ]]; then
+    branch=$(/usr/bin/pacman-mirrors -G)
+	  capital_branch="$(echo $branch | sed 's/\b[a-z]/\u&/g')"
+	else
+		echo "ERROR: 'pacman-mirrors' command not found, is this a valid Manjaro Linux installation?" 1>&2
+		exit 1
+  fi
+
+	# timestamp update announcements.
+	last_announcement=$(curl https://forum.manjaro.org/c/announcements/"$branch"-updates.rss 2> /dev/null | awk '/<title>/' | awk -v br="$capital_branch" '/\[br Update\]/{print $3}' | head -n1)
+	# timestamp of last update
+	last_update=$(awk '/upgrade/ {print $1}' /var/log/pacman.log | sed 's/\[//' | tail -n1)
+	if [[ $last_announcement > $last_update ]]; then
+		answer=$(dunstify -A terminal_update,YES -A true,NO "Update requires user input. Advice in forum announcements." "Run next update in terminal?")
+		case $answer in
+		terminal_update)
+			touch /tmp/.manual_update
+			;;
+		*)
+			true
+			;;
+		esac
+	fi
 fi

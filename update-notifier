@@ -2,66 +2,98 @@
 
 . ~/.profile
 trap 'rm /tmp/{pacmanupdates,aurupdates} 2>/dev/null' INT TERM QUIT EXIT
-nb_pac=$(checkupdates | tee /tmp/pacmanupdates | wc -l)
-if [ -f /usr/bin/pacaur ]; then
-   nb_aur=$(pacaur -Qua | awk '$2 == "aur" {print $3 $4 $5 $6}' | tee /tmp/aurupdates | wc -l)
-   update_command="pacaur -Syu"
-elif [ -f /usr/bin/yaourt ]; then
-    nb_aur=$(yaourt -Qua | grep "^aur/" | tee /tmp/aurupdates | wc -l)
-    update_command="yaourt -Syua"
+
+# check internet connection
+connection()
+{
+curl -s --max-time 10 google.com >/dev/null 2>&1
+}
+
+# check if some known terminal is installed
+#  and print it to stdout
+terminal()
+{
+if [ "$(command -v sterminal)" ]; then
+  echo "sterminal"
+elif [ "$(command -v urxvt)" ]; then
+  echo "urxvt"
+elif [ "$(command -v termite)" ]; then
+  echo "termite"
+elif [ "$(command -v terminator)" ]; then
+  echo "terminator"
+elif [ "$(command -v sakura)" ]; then
+  echo "sakura"
+elif [ "$(command -v lxterminal)" ]; then
+  echo "lxterminal"
+elif [ "$(command -v xfce4-terminal)" ]; then
+  echo "xfce4-terminal"
+elif [ "$(command -v gnome-terminal)" ]; then
+  echo "gnome-terminal"
+elif [ "$(command -v konsole)" ]; then
+  echo "konsole"
+elif [ "$(command -v qterminal)" ]; then
+  echo "qterminal"
+elif [ "$(command -v xterm)" ]; then
+  echo "xterm"
 else
-   nb_aur=0
-   update_command="sudo pacman -Syu"
+  echo ""
+fi
+}
+
+# list AUR updates and count them
+aur_check()
+{
+if [ -x /usr/bin/yay ]; then
+	yay -Qua | tee /tmp/aurupdates | wc -l
+elif [ -x /usr/bin/trizen ]; then
+	trizen -Qua | tee /tmp/aurupdates | wc -l
+elif [ -x /usr/bin/pacaur ]; then
+	pacaur -Qua | awk '$2 == "aur" {print $3 $4 $5 $6}' | tee /tmp/aurupdates | wc -l
+elif [ -x /usr/bin/yaourt ]; then
+	yaourt -Qua | grep "^aur/" | tee /tmp/aurupdates | wc -l
+else
+	echo 0
+fi
+}
+
+
+nb_pac=$(checkupdates | tee /tmp/pacmanupdates | wc -l)
+
+if connection; then
+	nb_aur=$(eval aur_check)
+else
+	echo "No internet connection, AUR updates skipped." 1>&2
 fi
 
-
 if [ -z "$TERMINAL" ]; then
-  if [ "$(which sterminal)" ]; then
-    echo "export TERMINAL=\"sterminal\"" >> ~/.profile
-    TERMINAL="sterminal"
-  elif [ "$(which urxvt)" ]; then
-    echo "export TERMINAL=\"urxvt\"" >> ~/.profile
-    TERMINAL="urxvt"
-  elif [ "$(which termite)" ]; then
-    echo "export TERMINAL=\"termite\"" >> ~/.profile
-    TERMINAL="termite"
-  elif [ "$(which terminator)" ]; then
-    echo "export TERMINAL=\"terminator\"" >> ~/.profile
-    TERMINAL="terminator"
-  elif [ "$(which sakura)" ]; then
-    TERMINAL="sakura"
-    echo "export TERMINAL=\"sakura\"" >> ~/.profile
-  elif [ "$(which lxterminal)" ]; then
-    echo "export TERMINAL=\"lxterminal\"" >> ~/.profile
-    TERMINAL="lxterminal"
-  elif [ "$(which xfce4-terminal)" ]; then
-    TERMINAL="xfce4-terminal"
-    echo "export TERMINAL=\"xfce4-terminal\"" >> ~/.profile
-  elif [ "$(which gnome-terminal)" ]; then
-    echo "export TERMINAL=\"gnome-terminal\"" >> ~/.profile
-    TERMINAL="gnome-terminal"
-  elif [ "$(which konsole)" ]; then
-    TERMINAL="konsole"
-    echo "export TERMINAL=\"konsole\"" >> ~/.profile
-  elif [ "$(which qterminal)" ]; then
-    TERMINAL="qterminal"
-    echo "export TERMINAL=\"qterminal\"" >> ~/.profile
-  elif [ "$(which xterm)" ]; then
-    TERMINAL="xterm"
-    echo "export TERMINAL=\"xterm\"" >> ~/.profile
+  TERMINAL=$(eval terminal)
+  if [ -z "$TERMINAL" ]; then
+    echo "ERROR: no known terminal emulator found, please update your TERMINAL environment variable." 1>&2
+    exit 1
   fi
+  echo "export TERMINAL=\"$TERMINAL\"" >> ~/.profile
+elif [ ! -x "$(command -v "$TERMINAL")" ]; then
+  echo "ERROR: '$TERMINAL' not found, please update your TERMINAL environment variable." 1>&2
+  if [ -z "$TERMINAL" ]; then
+    echo "ERROR: no known terminal emulator found, please update your TERMINAL environment variable." 1>&2
+    exit 1
+  fi
+  TERMINAL=$(eval terminal)
 fi
 
 if ((nb_pac>0 || nb_aur>0)); then
   ((nb_aur>0)) && nb_aur="+ ${nb_aur}" && cat /tmp/aurupdates >> /tmp/pacmanupdates
   ((nb_aur==0)) && unset nb_aur
-  answer=$(dunstify "You have ${nb_pac} ${nb_aur} updates" "$(cat /tmp/pacmanupdates)" \
-   -A Y,"Update now" -A N,Later)
-    case $(echo $answer) in
-      Y) $TERMINAL -e $update_command
+  answer=$(dunstify "You have ${nb_pac} ${nb_aur} updates" \
+		"$(cat /tmp/pacmanupdates)" -A Y,"Update now" -A N,Later)
+    case $answer in
+      Y) $TERMINAL -e update-help
         ;;
-    *) echo "$answer no match" 
-    esac 
+    	N)
+				;;
+			*) echo "'$answer' no match" 1>&2
+				;;
+    esac
 else
   dunstify "Your system is up to date" "No packages to update"
 fi
